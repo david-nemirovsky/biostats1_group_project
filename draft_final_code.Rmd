@@ -1,0 +1,160 @@
+---
+title: "draft_final_code"
+author: "Jared Klug"
+output: html_document
+---
+
+```{r setup, include = F}
+library(tidyverse)
+library(corrplot)
+library(leaps)
+library(HH)
+library(modelr)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "95%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+knitr::knit_hooks$set(inline = as.character)
+```
+
+```{r read_df}
+hatecrimes_df = read_csv("HateCrimes.csv") %>% 
+  mutate(
+    unemployment = factor(unemployment),
+    urbanization = factor(urbanization),
+    hate_crimes_per_100k_splc = as.numeric(hate_crimes_per_100k_splc)
+  ) %>% 
+  drop_na()
+
+ln_hatecrimes = hatecrimes_df %>% 
+  mutate(
+      ln_hate_crimes = log(hate_crimes_per_100k_splc, base=exp(1))
+  ) %>% 
+  dplyr::select(-hate_crimes_per_100k_splc)
+```
+
+```{r check correlation matrix}
+# par(mar = c(4,5,1,1))
+# corr_data = 
+#   hatecrimes_df %>% 
+#   dplyr::select(- unemployment, - urbanization, - state)
+# cor(corr_data[,c(1:5)]) %>%  
+#   corrplot(method = "circle", type = "upper", diag = FALSE)
+# 
+# #perc_non_citizen and perc_non_white heavily correlated
+# 
+# #possible correlation between perc_population_with_high_school_degree and gini_index
+```
+
+```{r make first model check boxcox}
+
+
+test_model = lm(hate_crimes_per_100k_splc ~ . -state, data = hatecrimes_df)
+
+summary(test_model)
+
+par(mfrow = c(2, 2))
+plot(test_model)
+#Residuals don't looks normal in QQ plot -- check boxcox to see if we should transform
+
+par(mfrow = c(1, 1))
+boxcox(test_model)
+
+# Try Log-transform as boxcox implies
+trans_model = lm(ln_hate_crimes ~ . -state, data = ln_hatecrimes)
+
+summary(trans_model)
+
+par(mfrow = c(2, 2))
+plot(trans_model)
+
+#Log transform looks a lot better than the normal for distribution of residuals
+
+```
+
+```{r Variable Selection}
+hypoth_model = step(trans_model, direction = "backward")
+
+summary(hypoth_model)
+
+plot(hypoth_model)
+#AIC barely changes from removing Unemployment so we can check it as a covariate lets compare both
+# Residuals don't look normally distributed -- lets check with unemployment
+
+ln_model = lm(ln_hate_crimes ~ unemployment + perc_population_with_high_school_degree + 
+    gini_index, data = ln_hatecrimes)
+
+summary(ln_model)
+
+##Adjusted R sq increase by a little lets check plots
+
+plot(ln_model)
+
+##QQ plot for model with unemployment (ln_model) looks better --> residuals have more normal distritubtion
+```
+
+```{r Take out influential points/outliers}
+
+##DC is influential according to Residuals vs Levarage plot
+
+
+ln_hatecrimes = ln_hatecrimes %>% 
+  filter(state != "District of Columbia")
+
+ln_model_no_dc = lm(ln_hate_crimes ~ unemployment + perc_population_with_high_school_degree + 
+    gini_index, data = ln_hatecrimes)
+
+plot(ln_model_no_dc)
+summary(ln_model_no_dc)
+
+stu_res = rstandard(ln_model_no_dc)
+stu_res[abs(stu_res) > 2]
+
+#R sq drops, gini_index also loses significance
+## We see [33] (Oregon) has highest Residual values, lets take out the outlier
+
+
+
+ln_hatecrimes = ln_hatecrimes %>% 
+  filter(state != "Oregon")
+
+ln_model_no_dc_or = lm(ln_hate_crimes ~ unemployment + perc_population_with_high_school_degree + 
+    gini_index, data = ln_hatecrimes)
+
+plot(ln_model_no_dc_or)
+
+## Lets not take out more variables to not bias our model
+
+summary(ln_model_no_dc_or)
+## Adjusted R sq increases, all variables significant at alpha = 0.10
+
+# Check correlation matrix
+par(mar = c(4,5,1,1))
+corr_data = 
+  ln_hatecrimes %>% 
+  dplyr::select(- unemployment, - urbanization, - state)
+cor(corr_data[,c(1:5)])
+
+## After DC and Oregon removed, corr plot indicates possible collinearity between gini_index and perc_population_with_high_school_degree
+dev.off()
+cor(corr_data[,c(1:5)]) %>%  
+  corrplot(method = "circle", type = "upper", diag = FALSE)
+
+##Check VIF
+vif(ln_model_no_dc_or)
+## No multicollinearity between perc_population_with_high_school_degree and gini_index
+```
+
