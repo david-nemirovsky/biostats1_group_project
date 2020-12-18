@@ -146,6 +146,21 @@ vif(ln_model_no_dc_or)
 ## No multicollinearity between perc_population_with_high_school_degree and gini_index
 ```
 
+```{r check for interactions}
+qplot(x = gini_index, y = ln_hate_crimes, data = ln_hatecrimes, color = unemployment) +
+  geom_smooth(method = "lm", se = FALSE)
+
+qplot(x = gini_index, y = ln_hate_crimes, data = ln_hatecrimes, color = urbanization) +
+  geom_smooth(method = "lm", se = FALSE)
+
+qplot(x = perc_population_with_high_school_degree, y = ln_hate_crimes, data = ln_hatecrimes, color = unemployment) +
+  geom_smooth(method = "lm", se = FALSE)
+
+qplot(x = perc_population_with_high_school_degree, y = ln_hate_crimes, data = ln_hatecrimes, color = urbanization) +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+
 ```{r cross val}
 ln_df = 
   hatecrimes_df %>% 
