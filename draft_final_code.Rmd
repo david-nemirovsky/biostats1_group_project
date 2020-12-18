@@ -127,7 +127,17 @@ plot(ln_model_no_dc_or)
 ## Lets not take out more variables to not bias our model
 
 summary(ln_model_no_dc_or)
-## Adjusted R sq increases, all variables significant at alpha = 0.10
+## Adjusted R sq increases, all variables significant at alpha = 0.1
+
+# Summary of Model
+ln_model_no_dc_or %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3) 
+
+# Important Values for Model
+ln_model_no_dc_or %>% 
+  broom::glance() %>% 
+  knitr::kable(digits = 3)
 
 # Check correlation matrix
 par(mar = c(4,5,1,1))
