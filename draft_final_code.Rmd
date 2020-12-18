@@ -46,19 +46,6 @@ ln_hatecrimes = hatecrimes_df %>%
   dplyr::select(-hate_crimes_per_100k_splc)
 ```
 
-```{r check correlation matrix}
-# par(mar = c(4,5,1,1))
-# corr_data = 
-#   hatecrimes_df %>% 
-#   dplyr::select(- unemployment, - urbanization, - state)
-# cor(corr_data[,c(1:5)]) %>%  
-#   corrplot(method = "circle", type = "upper", diag = FALSE)
-# 
-# #perc_non_citizen and perc_non_white heavily correlated
-# 
-# #possible correlation between perc_population_with_high_school_degree and gini_index
-```
-
 ```{r make first model check boxcox}
 
 
@@ -158,3 +145,21 @@ vif(ln_model_no_dc_or)
 ## No multicollinearity between perc_population_with_high_school_degree and gini_index
 ```
 
+```{r cross val}
+library(mgcv)
+
+#cv_df = 
+#  crossv_mc(ln_hatecrimes, nrow(ln_hatecrimes)) %>% 
+#  mutate(
+#    train = map(train, as_tibble),
+#    test = map(test, as_tibble)) %>% 
+#  mutate(
+#    ln_model  = map(train, ~lm(y ~ x, data = .x)),
+#    smooth_mod  = map(train, ~mgcv::gam(y ~ s(x), data = .x)),
+#    wiggly_mod  = map(train, ~gam(y ~ s(x, k = 30), sp = 10e-6, data = .x))) %>% 
+#  mutate(
+#    rmse_linear = map2_dbl(linear_mod, test, ~rmse(model = .x, data = .y)),
+#    rmse_smooth = map2_dbl(smooth_mod, test, ~rmse(model = .x, data = .y)),
+#    rmse_wiggly = map2_dbl(wiggly_mod, test, ~rmse(model = .x, data = .y)))
+#
+```
