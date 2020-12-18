@@ -48,8 +48,6 @@ ln_hatecrimes = hatecrimes_df %>%
 ```
 
 ```{r make first model check boxcox}
-
-
 test_model = lm(hate_crimes_per_100k_splc ~ . -state, data = hatecrimes_df)
 
 summary(test_model)
@@ -70,7 +68,6 @@ par(mfrow = c(2, 2))
 plot(trans_model)
 
 #Log transform looks a lot better than the normal for distribution of residuals
-
 ```
 
 ```{r Variable Selection}
@@ -95,9 +92,7 @@ plot(ln_model)
 ```
 
 ```{r Take out influential points/outliers}
-
 ##DC is influential according to Residuals vs Levarage plot
-
 
 ln_hatecrimes = ln_hatecrimes %>% 
   filter(state != "District of Columbia")
@@ -114,8 +109,6 @@ stu_res[abs(stu_res) > 2]
 #R sq drops, gini_index also loses significance
 ## We see [33] (Oregon) has highest Residual values, lets take out the outlier
 
-
-
 ln_hatecrimes = ln_hatecrimes %>% 
   filter(state != "Oregon")
 
@@ -127,6 +120,7 @@ plot(ln_model_no_dc_or)
 ## Lets not take out more variables to not bias our model
 
 summary(ln_model_no_dc_or)
+
 ## Adjusted R sq increases, all variables significant at alpha = 0.1
 
 # Summary of Model
@@ -137,13 +131,14 @@ ln_model_no_dc_or %>%
 # Important Values for Model
 ln_model_no_dc_or %>% 
   broom::glance() %>% 
+  dplyr::select(-statistic, -(sigma:logLik), -(deviance:nobs)) %>% 
   knitr::kable(digits = 3)
 
 # Check correlation matrix
 par(mar = c(4,5,1,1))
 corr_data = 
   ln_hatecrimes %>% 
-  dplyr::select(- unemployment, - urbanization, - state)
+  dplyr::select(-unemployment, -urbanization, -state)
 cor(corr_data[,c(1:5)])
 
 ## After DC and Oregon removed, corr plot indicates possible collinearity between gini_index and perc_population_with_high_school_degree
