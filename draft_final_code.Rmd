@@ -166,6 +166,8 @@ summary(int_unemployment_model)
 
 int_urbanization_model = lm(ln_hate_crimes ~ gini_index + 
     perc_population_with_high_school_degree*urbanization, data = ln_hatecrimes)
+
+summary(int_urbanization_model)
 ```
 
 
