@@ -10,6 +10,7 @@ library(corrplot)
 library(leaps)
 library(HH)
 library(modelr)
+library(mgcv)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -146,20 +147,34 @@ vif(ln_model_no_dc_or)
 ```
 
 ```{r cross val}
-library(mgcv)
+ln_df = 
+  hatecrimes_df %>% 
+  mutate(ln_hate_crimes = log(hate_crimes_per_100k_splc, base = exp(1))) %>% 
+  filter(state != "District of Columbia") %>% 
+  filter(state != "Oregon")
 
-#cv_df = 
-#  crossv_mc(ln_hatecrimes, nrow(ln_hatecrimes)) %>% 
-#  mutate(
-#    train = map(train, as_tibble),
-#    test = map(test, as_tibble)) %>% 
-#  mutate(
-#    ln_model  = map(train, ~lm(y ~ x, data = .x)),
-#    smooth_mod  = map(train, ~mgcv::gam(y ~ s(x), data = .x)),
-#    wiggly_mod  = map(train, ~gam(y ~ s(x, k = 30), sp = 10e-6, data = .x))) %>% 
-#  mutate(
-#    rmse_linear = map2_dbl(linear_mod, test, ~rmse(model = .x, data = .y)),
-#    rmse_smooth = map2_dbl(smooth_mod, test, ~rmse(model = .x, data = .y)),
-#    rmse_wiggly = map2_dbl(wiggly_mod, test, ~rmse(model = .x, data = .y)))
-#
+cv_df = 
+  crossv_mc(ln_df, nrow(ln_df)) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)) %>% 
+  mutate(
+    trans_model = map(train, ~lm(ln_hate_crimes ~ unemployment + perc_population_with_high_school_degree + 
+    gini_index, data = .x)),
+    untrans_model  = map(train, ~lm(hate_crimes_per_100k_splc ~ unemployment + perc_population_with_high_school_degree + 
+    gini_index, data = .x))) %>% 
+  mutate(
+    rmse_trans = map2_dbl(trans_model, test, ~rmse(model = .x, data = .y)),
+    rmse_untrans = map2_dbl(untrans_model, test, ~rmse(model = .x, data = .y)))
+
+cv_df %>% 
+  dplyr::select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin()
 ```
