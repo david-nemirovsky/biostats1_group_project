@@ -158,6 +158,14 @@ qplot(x = perc_population_with_high_school_degree, y = ln_hate_crimes, data = ln
 
 qplot(x = perc_population_with_high_school_degree, y = ln_hate_crimes, data = ln_hatecrimes, color = urbanization) +
   geom_smooth(method = "lm", se = FALSE)
+
+int_unemployment_model = lm(ln_hate_crimes ~ gini_index*unemployment + 
+    perc_population_with_high_school_degree, data = ln_hatecrimes)
+
+summary(int_unemployment_model)
+
+int_urbanization_model = lm(ln_hate_crimes ~ gini_index + 
+    perc_population_with_high_school_degree*urbanization, data = ln_hatecrimes)
 ```
 
 
