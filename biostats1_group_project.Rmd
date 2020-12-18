@@ -288,8 +288,6 @@ plot(2:8, rs$cp, xlab = "No of parameters", ylab = "Cp Statistic")
 abline(0,1)
 plot(2:8, rs$adjr2, xlab = "No of parameters", ylab = "Adj R2")
 
-hate_crimes_trans_no_dc_ak$state[42]
-
 par(mfrow = c(2,2))
 model_adj_trans_no_dc_or = lm(ln_hate_crimes ~ perc_population_with_high_school_degree + gini_index + unemployment, data = hate_crimes_trans_no_dc_or)
 summary(model_adj_trans_no_dc_or)
