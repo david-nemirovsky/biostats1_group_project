@@ -54,6 +54,20 @@ test_model = lm(hate_crimes_per_100k_splc ~ . -state, data = hatecrimes_df)
 
 summary(test_model)
 
+test_model%>% 
+  tbl_regression(
+      label = 
+          list(
+            median_household_income ~ "Median Household Income",
+            perc_population_with_high_school_degree ~ "Percent HS Degree",
+            perc_non_citizen ~ "Percent Non-Citizen",
+            gini_index ~ "Gini",
+            unemployment ~ "Unemployment",
+            perc_non_white ~ "Percent Non-White"
+          ) 
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
+
 par(mfrow = c(2, 2))
 plot(test_model)
 #Residuals don't looks normal in QQ plot -- check boxcox to see if we should transform
@@ -65,6 +79,20 @@ boxcox(test_model)
 trans_model = lm(ln_hate_crimes ~ . -state, data = ln_hatecrimes)
 
 summary(trans_model)
+
+trans_model%>% 
+  tbl_regression(
+      label = 
+          list(
+            median_household_income ~ "Median Household Income",
+            perc_population_with_high_school_degree ~ "Percent HS Degree",
+            perc_non_citizen ~ "Percent Non-Citizen",
+            gini_index ~ "Gini",
+            unemployment ~ "Unemployment",
+            perc_non_white ~ "Percent Non-White"
+          ) 
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
 
 par(mfrow = c(2, 2))
 plot(trans_model)
@@ -87,9 +115,25 @@ ln_model = lm(ln_hate_crimes ~ unemployment + perc_population_with_high_school_d
 
 summary(ln_model)
 
+ln_model%>% 
+  tbl_regression(
+      label = 
+          list(
+            perc_population_with_high_school_degree ~ "Percent HS Degree",
+            gini_index ~ "Gini",
+            unemployment ~ "Unemployment"
+          ) 
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
+
 ##Adjusted R sq increase by a little lets check plots
 
 plot(ln_model)
+
+ln_model %>% 
+  broom::glance() %>% 
+  select(r.squared, adj.r.squared, AIC, BIC) %>% 
+  gt()
 
 ##QQ plot for model with unemployment (ln_model) looks better --> residuals have more normal distritubtion
 ```
@@ -108,12 +152,27 @@ ln_model_no_dc = lm(ln_hate_crimes ~ unemployment + perc_population_with_high_sc
 plot(ln_model_no_dc)
 summary(ln_model_no_dc)
 
+ln_model_no_dc%>% 
+  tbl_regression(
+      label = 
+          list(
+            perc_population_with_high_school_degree ~ "Percent HS Degree",
+            gini_index ~ "Gini",
+            unemployment ~ "Unemployment"
+          ) 
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
+
+ln_model_no_dc %>% 
+  broom::glance() %>% 
+  select(r.squared, adj.r.squared, AIC, BIC) %>% 
+  gt()
+
 stu_res = rstandard(ln_model_no_dc)
 stu_res[abs(stu_res) > 2]
 
 #R sq drops, gini_index also loses significance
 ## We see [33] (Oregon) has highest Residual values, lets take out the outlier
-
 
 
 ln_hatecrimes = ln_hatecrimes %>% 
@@ -127,6 +186,17 @@ plot(ln_model_no_dc_or)
 ## Lets not take out more variables to not bias our model
 
 summary(ln_model_no_dc_or)
+ln_model_no_dc_or%>% 
+  tbl_regression(
+      label = 
+          list(
+            perc_population_with_high_school_degree ~ "Percent HS Degree",
+            gini_index ~ "Gini",
+            unemployment ~ "Unemployment"
+          ) 
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
+
 ## Adjusted R sq increases, all variables significant at alpha = 0.1
 
 # Summary of Model
@@ -137,7 +207,8 @@ ln_model_no_dc_or %>%
 # Important Values for Model
 ln_model_no_dc_or %>% 
   broom::glance() %>% 
-  knitr::kable(digits = 3)
+  select(r.squared, adj.r.squared, AIC, BIC) %>% 
+  gt()
 
 # Check correlation matrix
 par(mar = c(4,5,1,1))
@@ -174,8 +245,18 @@ int_unemployment_model = lm(ln_hate_crimes ~ gini_index*unemployment +
 
 summary(int_unemployment_model)
 
+int_unemployment_model%>% 
+  tbl_regression(
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
+
 int_urbanization_model = lm(ln_hate_crimes ~ gini_index + 
     perc_population_with_high_school_degree*urbanization, data = ln_hatecrimes)
+
+int_urbanization_model%>% 
+  tbl_regression(
+  ) %>% 
+  modify_footnote(ci ~ NA, abbreviation = TRUE)
 
 summary(int_urbanization_model)
 ```
